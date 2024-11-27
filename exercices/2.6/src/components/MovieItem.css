@@ -1,0 +1,15 @@
+.movie-item {
+    border: 1px solid #ccc;
+    padding: 16px;
+    margin: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  .movie-item h3 {
+    margin: 0;
+  }
+  
+  .movie-item p {
+    margin: 8px 0;
+  }

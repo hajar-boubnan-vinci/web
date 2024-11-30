@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 import { Movie } from "../types";
-import MovieItem from './MovieItem';
+import MovieItem from "./MovieItem";
 
 interface CinemaProps {
   name: string;

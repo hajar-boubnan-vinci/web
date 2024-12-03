@@ -1,0 +1,47 @@
+######### NORMAL OPERATION  ###########
+
+### Read all comments
+GET http://localhost:3000/comments
+
+### Read all comments for a specific film
+GET http://localhost:3000/comments?filmId=1
+
+### Create a comment by using the admin account
+#### First login as the admin
+##### Define a request variable named admin :
+# @name admin
+POST http://localhost:3000/auths/login
+Content-Type: application/json
+
+{
+    "username":"admin",
+    "password":"admin"
+}
+
+#### Create a comment with the admin token
+POST http://localhost:3000/comments
+Content-Type: application/json
+Authorization: {{admin.response.body.token}}
+
+{
+    "filmId": 1,
+    "content": "Amazing movie!"
+}
+
+### Delete comment identified by 1 with the admin token
+DELETE http://localhost:3000/comments/1
+Authorization: {{admin.response.body.token}}
+
+######### ERROR OPERATION  ###########
+
+### Create a comment without a token
+POST http://localhost:3000/comments
+Content-Type: application/json
+
+{
+    "filmId": 1,
+    "content": "Amazing movie!"
+}
+
+### Delete a comment without a token
+DELETE http://localhost:3000/comments/1

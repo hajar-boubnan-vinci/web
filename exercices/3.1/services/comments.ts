@@ -1,45 +1,62 @@
 import path from "node:path";
-import { Comment, NewComment } from "../types";
+
+import { Comment } from "../types";
+
 import { parse, serialize } from "../utils/json";
-import { readMovieById } from "./films";
+import { readOne } from "./films";
 
 const jsonDbPath = path.join(__dirname, "/../data/comments.json");
 
-const defaultComments: Comment[] = [];
+// Read all comments and filter then by filmId if provided
+const readAll = (filmId: number | undefined = undefined): Comment[] => {
+  const comments = parse<Comment>(jsonDbPath);
 
-function readAllComments(filmId?: number): Comment[] {
-  const comments = parse(jsonDbPath, defaultComments);
-  if (filmId !== undefined) {
-    return comments.filter(comment => comment.filmId === filmId);
+  return filmId
+    ? comments.filter((comment) => comment.filmId === filmId)
+    : comments;
+};
+
+// Create a new comment
+const createOne = (comment: Comment): void => {
+  const comments = parse<Comment>(jsonDbPath);
+
+  // Check if the film exists in the films
+  const filmFound = readOne(comment.filmId);
+  if (!filmFound) {
+    throw new Error("Not found");
   }
-  return comments;
-}
 
-function createComment(newComment: NewComment): Comment | null {
-  const comments = parse(jsonDbPath, defaultComments);
-  const movie = readMovieById(newComment.filmId);
-  if (!movie) {
-    return null; // Le film n'existe pas
+  // Check that the username has not already commented on the film
+  const userHasCommented = comments.some(
+    (c) => c.filmId === comment.filmId && c.username === comment.username
+  );
+
+  if (userHasCommented) {
+    throw new Error("Conflict");
   }
-  const existingComment = comments.find(comment => comment.filmId === newComment.filmId && comment.userId === newComment.userId);
-  if (existingComment) {
-    return null; // L'utilisateur a déjà commenté ce film
-  }
-  const lastId = comments.length > 0 ? comments[comments.length - 1].id : 0;
-  const comment: Comment = { id: lastId + 1, ...newComment };
-  const updatedComments = [...comments, comment];
-  serialize(jsonDbPath, updatedComments);
-  return comment;
-}
 
-function deleteComment(id: number, userId: number): Comment | undefined {
-  const comments = parse(jsonDbPath, defaultComments);
-  const index = comments.findIndex(comment => comment.id === id && comment.userId === userId);
-  if (index === -1) return undefined;
+  comments.push(comment);
 
-  const deletedElements = comments.splice(index, 1);
   serialize(jsonDbPath, comments);
-  return deletedElements[0];
-}
+};
 
-export { readAllComments, createComment, deleteComment };
+// Delete a comment
+const deleteOne = (filmId: number, username: string): Comment => {
+  const comments = parse<Comment>(jsonDbPath);
+
+  const index = comments.findIndex(
+    (c) => c.filmId === filmId && c.username === username
+  );
+
+  if (index === -1) {
+    throw new Error("Not found");
+  }
+
+  const deletedComments = comments.splice(index, 1);
+
+  serialize(jsonDbPath, comments);
+
+  return deletedComments[0];
+};
+
+export { readAll, createOne, deleteOne };

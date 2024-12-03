@@ -1,16 +1,54 @@
-######### NORMAL OPERATION  ###########
+@baseUrl = http://localhost:3000
 
 ### Read all comments
-GET http://localhost:3000/comments
+GET {{baseUrl}}/comments
 
-### Read all comments for a specific film
-GET http://localhost:3000/comments?filmId=1
+### Read all comments linked to a film
+GET {{baseUrl}}/comments/?filmId=1
 
-### Create a comment by using the admin account
-#### First login as the admin
-##### Define a request variable named admin :
+### Create a new user
+# @name me
+POST {{baseUrl}}/auths/register
+Content-Type: application/json
+
+{
+    "username":"me",
+    "password":"me"
+}
+
+### Login the user
+# @name me
+POST {{baseUrl}}/auths/login
+Content-Type: application/json
+
+{
+    "username":"me",
+    "password":"me"
+}
+
+### Create a new comment
+POST {{baseUrl}}/comments
+Content-Type: application/json
+Authorization: {{me.response.body.token}}
+
+{
+    "filmId": 1,
+    "comment": "This is a wonderful comment"
+}
+
+### Create a new comment
+POST {{baseUrl}}/comments
+Content-Type: application/json
+Authorization: {{me.response.body.token}}
+
+{
+    "filmId": 3,
+    "comment": "I liked it"
+}
+
+### Login the admin
 # @name admin
-POST http://localhost:3000/auths/login
+POST {{baseUrl}}/auths/login
 Content-Type: application/json
 
 {
@@ -18,50 +56,16 @@ Content-Type: application/json
     "password":"admin"
 }
 
-#### Create a comment with the admin token
-POST http://localhost:3000/comments
+### Create a new comment
+POST {{baseUrl}}/comments
 Content-Type: application/json
 Authorization: {{admin.response.body.token}}
 
 {
     "filmId": 1,
-    "content": "Amazing movie!"
+    "comment": "This is a comment from superadmin"
 }
 
-### Delete comment identified by 1 with the admin token
-DELETE http://localhost:3000/comments/1
+### Delete a comment
+DELETE {{baseUrl}}/comments/films/1
 Authorization: {{admin.response.body.token}}
-
-######### ERROR OPERATION  ###########
-
-### Create a comment without a token
-POST http://localhost:3000/comments
-Content-Type: application/json
-
-{
-    "filmId": 1,
-    "content": "Amazing movie!"
-}
-
-### Delete a comment without a token
-DELETE http://localhost:3000/comments/1
-
-### Create a comment for a non-existent film
-POST http://localhost:3000/comments
-Content-Type: application/json
-Authorization: {{admin.response.body.token}}
-
-{
-    "filmId": 999,
-    "content": "This film does not exist."
-}
-
-### Create a duplicate comment
-POST http://localhost:3000/comments
-Content-Type: application/json
-Authorization: {{admin.response.body.token}}
-
-{
-    "filmId": 1,
-    "content": "Amazing movie!"
-}

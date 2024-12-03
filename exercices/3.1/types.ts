@@ -48,31 +48,23 @@ interface JwtPayload {
 
 // Ajout des interfaces pour les films et les commentaires
 
-interface Movie {
+interface Film {
   id: number;
   title: string;
   director: string;
   duration: number;
+  budget?: number;
   description?: string;
+  imageUrl?: string;
 }
-
-interface MovieToUpdate {
-  title?: string;
-  director?: string;
-  duration?: number;
-  description?: string;
-}
-
-type NewMovie = Omit<Movie, "id">;
 
 interface Comment {
-  id: number;
   filmId: number;
-  userId: number;
-  content: string;
+  username: string;
+  comment: string;
 }
 
-type NewComment = Omit<Comment, "id">;
+type NewFilm = Omit<Film, "id">;
 
 export type {
   Pizza,
@@ -85,9 +77,7 @@ export type {
   PotentialUser,
   AuthenticatedRequest,
   JwtPayload,
-  Movie,
-  NewMovie,
-  MovieToUpdate,
+  Film,
+  NewFilm,
   Comment,
-  NewComment,
 };

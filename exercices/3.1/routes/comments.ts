@@ -1,55 +1,114 @@
 import { Router } from "express";
-import { NewComment, AuthenticatedRequest } from "../types";
-import { createComment, deleteComment, readAllComments } from "../services/comments";
+
+import { containsOnlyExpectedKeys } from "../utils/validate";
+
+import { readAll, createOne, deleteOne } from "../services/comments";
+
+import { Comment } from "../types";
 import { authorize } from "../utils/auths";
 
 const router = Router();
 
-/* Read all comments, optionally filtered by filmId
-   GET /comments
-   GET /comments?filmId=1
-*/
-router.get("/", (_req, res) => {
-  const filmId = _req.query.filmId ? Number(_req.query.filmId) : undefined;
-  const comments = readAllComments(filmId);
-  return res.json(comments);
+const expectedKeys = ["comment", "filmId", "username"];
+
+// Read all comments, filtered by filmId if the query param exists
+router.get("/", (req, res) => {
+  const filmId =
+    "filmId" in req.query ? Number(req.query["filmId"]) : undefined;
+
+  if (filmId !== undefined && (isNaN(filmId) || filmId <= 0)) {
+    return res.sendStatus(400);
+  }
+
+  const filteredComments = readAll(filmId);
+
+  return res.send(filteredComments);
 });
 
-// Create a comment
-router.post("/", authorize, (req: AuthenticatedRequest, res) => {
+// Create a new comment
+router.post("/", authorize, (req, res) => {
   const body: unknown = req.body;
+
   if (
     !body ||
     typeof body !== "object" ||
+    !("comment" in body) ||
     !("filmId" in body) ||
-    !("content" in body) ||
+    typeof body.comment !== "string" ||
     typeof body.filmId !== "number" ||
-    typeof body.content !== "string" ||
-    !body.content.trim()
+    !Number.isInteger(body.filmId) ||
+    body.filmId <= 0 ||
+    !body.comment.trim() ||
+    !("user" in req) ||
+    typeof req.user !== "object" ||
+    !req.user ||
+    !("username" in req.user) ||
+    typeof req.user.username !== "string"
+  ) {
+    return res.sendStatus(400);
+  }
+  if (!containsOnlyExpectedKeys(body, expectedKeys)) {
+    return res.sendStatus(400);
+  }
+
+  const newComment: Comment = {
+    filmId: body.filmId,
+    username: req.user.username,
+    comment: body.comment,
+  };
+
+  try {
+    createOne(newComment);
+    return res.send(newComment);
+  } catch (error) {
+    if (!(error instanceof Error)) {
+      return res.sendStatus(500);
+    }
+
+    if (error.message === "Not found") {
+      return res.sendStatus(404);
+    }
+
+    if (error.message === "Conflict") {
+      return res.sendStatus(409);
+    }
+
+    return res.sendStatus(500);
+  }
+});
+
+// Delete a comment
+router.delete("/films/:filmId", authorize, (req, res) => {
+  const filmId = Number(req.params.filmId);
+
+  if (
+    isNaN(filmId) ||
+    filmId <= 0 ||
+    !("user" in req) ||
+    typeof req.user !== "object" ||
+    !req.user ||
+    !("username" in req.user) ||
+    typeof req.user.username !== "string"
   ) {
     return res.sendStatus(400);
   }
 
-  const { filmId, content } = body as NewComment;
-  const userId = req.user!.id;
+  const username = req.user.username;
 
-  const addedComment = createComment({ filmId, userId, content });
+  try {
+    const deletedComment = deleteOne(filmId, username);
+    return res.send(deletedComment);
+  } catch (error) {
+    if (!(error instanceof Error)) {
+      return res.sendStatus(500);
+    }
 
-  if (!addedComment) {
-    return res.status(400).send("Comment could not be created. Either the film does not exist or the user has already commented on this film.");
+    if (error.message === "Not found") {
+      return res.sendStatus(404);
+    }
+
+    return res.sendStatus(500);
   }
-
-  return res.json(addedComment);
-});
-
-// Delete a comment
-router.delete("/:id", authorize, (req: AuthenticatedRequest, res) => {
-  const id = Number(req.params.id);
-  const userId = req.user!.id;
-  const deletedComment = deleteComment(id, userId);
-  if (!deletedComment) return res.sendStatus(404);
-
-  return res.json(deletedComment);
 });
 
 export default router;

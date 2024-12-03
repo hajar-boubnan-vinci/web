@@ -1,74 +1,160 @@
 import path from "node:path";
-import { Movie, NewMovie } from "../types";
-import { parse, serialize } from "../utils/json";
+
+import { Film, NewFilm } from "../types";
+
+import { serialize, parse } from "../utils/json";
 
 const jsonDbPath = path.join(__dirname, "/../data/films.json");
 
-const defaultMovies: Movie[] = [
+const defaultFilms: Film[] = [
   {
     id: 1,
-    title: "Inception",
-    director: "Christopher Nolan",
-    duration: 148,
-    description: "A mind-bending thriller",
+    title: "Shang-Chi and the Legend of the Ten Rings",
+    director: "Destin Daniel Cretton",
+    duration: 132,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/en/7/74/Shang-Chi_and_the_Legend_of_the_Ten_Rings_poster.jpeg",
+    description:
+      "Shang-Chi, the master of unarmed weaponry-based Kung Fu, is forced to confront his past after being drawn into the Ten Rings organization.",
+    budget: 150,
   },
   {
     id: 2,
-    title: "Interstellar",
-    director: "Christopher Nolan",
-    duration: 169,
-    description: "A journey through space and time",
+    title: "The Matrix",
+    director: "Lana Wachowski, Lilly Wachowski",
+    duration: 136,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/en/c/c1/The_Matrix_Poster.jpg",
+    description:
+      "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+    budget: 63,
+  },
+  {
+    id: 3,
+    title: "Summer Wars",
+    director: "Mamoru Hosoda",
+    duration: 114,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/en/7/7d/Summer_Wars_poster.jpg",
+    description:
+      "A young math genius solves a complex equation and inadvertently puts a virtual world's artificial intelligence in a position to destroy Earth.",
+    budget: 18.7,
+  },
+  {
+    id: 4,
+    title: "The Meyerowitz Stories",
+    director: "Noah Baumbach",
+    duration: 112,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/en/a/af/The_Meyerowitz_Stories.png",
+    description:
+      "An estranged family gathers together in New York City for an event celebrating the artistic work of their father.",
+  },
+  {
+    id: 5,
+    title: "her",
+    director: "Spike Jonze",
+    duration: 126,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/en/4/44/Her2013Poster.jpg",
+    description:
+      "In a near future, a lonely writer develops an unlikely relationship with an operating system designed to meet his every need.",
+    budget: 23,
   },
 ];
 
-function readAllMovies(): Movie[] {
-  return parse(jsonDbPath, defaultMovies);
-}
+const readAll = (minimumDuration: number | undefined = undefined): Film[] => {
+  const films = parse(jsonDbPath, defaultFilms);
+  return minimumDuration
+    ? films.filter((film) => film.duration >= minimumDuration)
+    : films;
+};
 
-function readMovieById(id: number): Movie | undefined {
-  const movies = parse(jsonDbPath, defaultMovies);
-  return movies.find((movie) => movie.id === id);
-}
+const readOne = (id: number): Film | undefined => {
+  const films = parse(jsonDbPath, defaultFilms);
+  return films.find((film) => film.id === id);
+};
 
-function createMovie(newMovie: NewMovie): Movie {
-  const movies = parse(jsonDbPath, defaultMovies);
-  const lastId = movies[movies.length - 1].id;
-  const movie: Movie = { id: lastId + 1, ...newMovie };
-  const updatedMovies = [...movies, movie];
-  serialize(jsonDbPath, updatedMovies);
-  return movie;
-}
+const createOne = (newFilm: NewFilm): Film | undefined => {
+  const films = parse(jsonDbPath, defaultFilms);
 
-function deleteMovie(id: number): Movie | undefined {
-  const movies = parse(jsonDbPath, defaultMovies);
-  const index = movies.findIndex((movie) => movie.id === id);
-  if (index === -1) return undefined;
+  const existingFilm = films.find(
+    (film) =>
+      film.title.toLowerCase() === newFilm.title.toLowerCase() &&
+      film.director.toLowerCase() === newFilm.director.toLowerCase()
+  );
 
-  const deletedElements = movies.splice(index, 1);
-  serialize(jsonDbPath, movies);
-  return deletedElements[0];
-}
-
-function updateMovie(id: number, updatedMovie: Partial<NewMovie>): Movie | undefined {
-  const movies = parse(jsonDbPath, defaultMovies);
-  const movie = movies.find((movie) => movie.id === id);
-  if (!movie) return undefined;
-
-  if (updatedMovie.title !== undefined) {
-    movie.title = updatedMovie.title;
-  }
-  if (updatedMovie.director !== undefined) {
-    movie.director = updatedMovie.director;
-  }
-  if (updatedMovie.duration !== undefined) {
-    movie.duration = updatedMovie.duration;
-  }
-  if (updatedMovie.description !== undefined) {
-    movie.description = updatedMovie.description;
+  if (existingFilm) {
+    return undefined;
   }
 
-  serialize(jsonDbPath, movies);
-  return movie;
-}
+  const film = { id: nextId(), ...newFilm };
 
-export { readAllMovies, readMovieById, createMovie, deleteMovie, updateMovie };
+  films.push(film);
+  serialize(jsonDbPath, films);
+
+  return film;
+};
+
+const deleteOne = (id: number): Film | undefined => {
+  const films = parse(jsonDbPath, defaultFilms);
+
+  const index = films.findIndex((film) => film.id === id);
+
+  if (index === -1) {
+    return undefined;
+  }
+
+  const [film] = films.splice(index, 1);
+  serialize(jsonDbPath, films);
+
+  return film;
+};
+
+const updateOne = (
+  id: number,
+  updatedFilm: Partial<NewFilm>
+): Film | undefined => {
+  const films = parse(jsonDbPath, defaultFilms);
+
+  const index = films.findIndex((film) => film.id === id);
+
+  if (index === -1) {
+    return undefined;
+  }
+
+  const film = { ...films[index], ...updatedFilm };
+
+  films[index] = film;
+  serialize(jsonDbPath, films);
+
+  return film;
+};
+
+const updateOrCreateOne = (
+  id: number,
+  updatedFilm: NewFilm
+): Film | undefined => {
+  const films = parse(jsonDbPath, defaultFilms);
+
+  const index = films.findIndex((film) => film.id === id);
+
+  if (index === -1) {
+    return createOne(updatedFilm);
+  }
+
+  const film = { ...films[index], ...updatedFilm };
+
+  films[index] = film;
+  serialize(jsonDbPath, films);
+
+  return film;
+};
+
+const nextId = () =>
+  parse(jsonDbPath, defaultFilms).reduce(
+    (maxId, film) => Math.max(maxId, film.id),
+    0
+  ) + 1;
+
+export { readAll, readOne, createOne, deleteOne, updateOne, updateOrCreateOne };

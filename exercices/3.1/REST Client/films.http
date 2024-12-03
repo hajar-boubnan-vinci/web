@@ -1,0 +1,132 @@
+######### NORMAL OPERATION  ###########
+
+### Read all films
+GET http://localhost:3000/films
+
+### Read all films with File variable
+@baseUrl = http://localhost:3000
+GET {{baseUrl}}/films
+
+### Read film identified by 2
+GET {{baseUrl}}/films/2
+
+### Create a film by using the admin account
+#### First login as the admin
+##### Define a request variable named admin :
+# @name admin
+POST {{baseUrl}}/auths/login
+Content-Type: application/json
+
+{
+    "username":"admin",
+    "password":"admin"
+}
+
+#### Create a film with the admin token
+POST {{baseUrl}}/films
+Content-Type: application/json
+Authorization: {{admin.response.body.token}}
+
+{
+    "title":"The Matrix",
+    "director":"Lana Wachowski, Lilly Wachowski",
+    "duration":136,
+    "description":"A hacker discovers the true nature of reality."
+}
+
+### Delete film identified by 2 with the admin token
+DELETE {{baseUrl}}/films/2
+Authorization: {{admin.response.body.token}}
+
+### Update the film identified by 1 with the admin token
+PATCH {{baseUrl}}/films/1
+Content-Type: application/json
+Authorization: {{admin.response.body.token}}
+
+{
+    "title":"The Matrix Reloaded"
+}
+
+######### ERROR OPERATION  ###########
+
+### Read the film error
+GET {{baseUrl}}/films/error
+
+### Read film which does not exist
+GET {{baseUrl}}/films/100
+
+### 1. Create a film without a token
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+    "title":"The Matrix",
+    "director":"Lana Wachowski, Lilly Wachowski",
+    "duration":136,
+    "description":"A hacker discovers the true nature of reality."
+}
+
+### 2. Create a film without being the admin, use manager account
+#### 2.1 First login as the manager
+##### 2.1.1 Define a request variable named manager
+# @name manager
+POST {{baseUrl}}/auths/login
+Content-Type: application/json
+
+{
+    "username":"manager",
+    "password":"manager"
+}
+
+##### 2.1.2 Define a file variable to simplify the access to the token of manager
+@managerToken = {{manager.response.body.token}}
+
+#### 2.2 Try to create a film with the manager token
+POST {{baseUrl}}/films
+Content-Type: application/json
+Authorization: {{managerToken}}
+
+{
+    "title":"The Matrix",
+    "director":"Lana Wachowski, Lilly Wachowski",
+    "duration":136,
+    "description":"A hacker discovers the true nature of reality."
+}
+
+### Create a film which lacks a property
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+    "director":"Lana Wachowski, Lilly Wachowski",
+    "duration":136,
+    "description":"A hacker discovers the true nature of reality."
+}
+
+### Create a film without info for a property
+POST {{baseUrl}}/films
+Content-Type: application/json
+
+{
+    "title":"",
+    "director":"Lana Wachowski, Lilly Wachowski",
+    "duration":136,
+    "description":"A hacker discovers the true nature of reality."
+}
+
+### Update a film which does not exist
+PATCH {{baseUrl}}/films/200
+Content-Type: application/json
+
+{
+    "title":"The Matrix Reloaded"
+}
+
+### Update a film which does not provide any info for a property
+PATCH {{baseUrl}}/films/1
+Content-Type: application/json
+
+{
+    "title":"The Matrix Reloaded",
+    "description":""
+}

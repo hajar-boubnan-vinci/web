@@ -46,7 +46,7 @@ interface JwtPayload {
   iat: number; // Issued at time (in seconds since the epoch)
 }
 
-// Ajout des interfaces pour les films et les commentaires
+// Ajout des interfaces pour les films
 
 interface Movie {
   id: number;
@@ -65,15 +65,6 @@ interface MovieToUpdate {
 
 type NewMovie = Omit<Movie, "id">;
 
-interface Comment {
-  id: number;
-  filmId: number;
-  userId: number;
-  content: string;
-}
-
-type NewComment = Omit<Comment, "id">;
-
 export type {
   Pizza,
   NewPizza,
@@ -88,6 +79,4 @@ export type {
   Movie,
   NewMovie,
   MovieToUpdate,
-  Comment,
-  NewComment,
 };

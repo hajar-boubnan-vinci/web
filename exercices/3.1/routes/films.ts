@@ -14,7 +14,7 @@ const router = Router();
 /* Read all the movies
    GET /films
 */
-router.get("/", (_req, res) => { // Marquer _req comme intentionnellement inutilisée
+router.get("/", (_req, res) => {
   const movies = readAllMovies();
   return res.json(movies);
 });

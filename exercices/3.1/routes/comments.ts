@@ -35,6 +35,10 @@ router.post("/", authorize, (req: AuthenticatedRequest, res) => {
 
   const addedComment = createComment({ filmId, userId, content });
 
+  if (!addedComment) {
+    return res.status(400).send("Comment could not be created. Either the film does not exist or the user has already commented on this film.");
+  }
+
   return res.json(addedComment);
 });
 

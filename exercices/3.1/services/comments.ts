@@ -1,6 +1,7 @@
 import path from "node:path";
 import { Comment, NewComment } from "../types";
 import { parse, serialize } from "../utils/json";
+import { readMovieById } from "./films";
 
 const jsonDbPath = path.join(__dirname, "/../data/comments.json");
 
@@ -14,8 +15,16 @@ function readAllComments(filmId?: number): Comment[] {
   return comments;
 }
 
-function createComment(newComment: NewComment): Comment {
+function createComment(newComment: NewComment): Comment | null {
   const comments = parse(jsonDbPath, defaultComments);
+  const movie = readMovieById(newComment.filmId);
+  if (!movie) {
+    return null; // Le film n'existe pas
+  }
+  const existingComment = comments.find(comment => comment.filmId === newComment.filmId && comment.userId === newComment.userId);
+  if (existingComment) {
+    return null; // L'utilisateur a déjà commenté ce film
+  }
   const lastId = comments.length > 0 ? comments[comments.length - 1].id : 0;
   const comment: Comment = { id: lastId + 1, ...newComment };
   const updatedComments = [...comments, comment];
